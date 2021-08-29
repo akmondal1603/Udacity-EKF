@@ -1,7 +1,11 @@
 #include "kalman_filter.h"
+#include <math.h>
+#include<iostream>
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+using std::endl;
+using std::cout;
 
 /* 
  * Please note that the Eigen library does not initialize 
@@ -57,13 +61,29 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   double vx=x_(2);
   double vy=x_(3);
   
-  double rho=sqrt(px*px);
-  double phi=atan2(py, py);
+  double rho=sqrt((px*px)+(py*py));
+  double phi=atan2(py, px);
   double rho_dot=(px*vx+py*vy)/ rho;
   
   VectorXd h=VectorXd(3);
+  if (rho< 0.0001)
+  {
+    cout << "ERROR: UpdateEKF () - Division by zero" << endl;
+    h<<0,0,0;
+  }
+  
   h<<rho, phi, rho_dot;
   VectorXd y=z-h;
+  
+  if (y(1)>M_PI)
+  {
+    y(1) = y(1) - 2*M_PI;
+  }
+  else if (y(1)<-M_PI)
+  {
+    y(1) = y(1) + 2*M_PI;
+  }
+  
   MatrixXd H_trans=H_.transpose();
   MatrixXd S=H_*P_*H_trans+R_;
   MatrixXd S_inv=S.inverse();
